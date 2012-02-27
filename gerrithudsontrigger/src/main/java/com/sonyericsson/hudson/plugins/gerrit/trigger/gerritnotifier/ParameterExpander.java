@@ -29,7 +29,7 @@ import com.sonyericsson.hudson.plugins.gerrit.trigger.gerritnotifier.model.Build
 import com.sonyericsson.hudson.plugins.gerrit.trigger.gerritnotifier.model.BuildsStartedStats;
 import com.sonyericsson.hudson.plugins.gerrit.trigger.hudsontrigger.GerritTrigger;
 import com.sonyericsson.hudson.plugins.gerrit.trigger.utils.StringUtil;
-import com.sonyericsson.hudson.plugins.gerrit.gerritevents.dto.events.PatchsetCreated;
+import com.sonyericsson.hudson.plugins.gerrit.gerritevents.dto.events.GerritTriggeredEvent;
 import hudson.model.AbstractBuild;
 import hudson.model.Hudson;
 import hudson.model.Result;
@@ -87,7 +87,7 @@ public class ParameterExpander {
      * @return the "expanded" command string.
      */
     public String getBuildStartedCommand(AbstractBuild r, TaskListener taskListener,
-            PatchsetCreated event, BuildsStartedStats stats) {
+            GerritTriggeredEvent event, BuildsStartedStats stats) {
 
         GerritTrigger trigger = GerritTrigger.getTrigger(r.getProject());
         String gerritCmd = config.getGerritCmdBuildStarted();
@@ -175,16 +175,18 @@ public class ParameterExpander {
      * @param verified the verified vote.
      * @return the parameters and their values.
      */
-    private Map<String, String> createStandardParameters(AbstractBuild r, PatchsetCreated event,
+    private Map<String, String> createStandardParameters(AbstractBuild r, GerritTriggeredEvent event,
             int codeReview, int verified) {
         //<GERRIT_NAME> <BRANCH> <CHANGE> <PATCHSET> <REFSPEC> <BUILDURL> VERIFIED CODE_REVIEW
         Map<String, String> map = new HashMap<String, String>(DEFAULT_PARAMETERS_COUNT);
-        map.put("GERRIT_NAME", event.getChange().getProject());
-        map.put("CHANGE_ID", event.getChange().getId());
-        map.put("BRANCH", event.getChange().getProject());
-        map.put("CHANGE", event.getChange().getNumber());
-        map.put("PATCHSET", event.getPatchSet().getNumber());
-        map.put("REFSPEC", StringUtil.makeRefSpec(event));
+        if (event.getChange() != null) {
+            map.put("GERRIT_NAME", event.getChange().getProject());
+            map.put("CHANGE_ID", event.getChange().getId());
+            map.put("BRANCH", event.getChange().getProject());
+            map.put("CHANGE", event.getChange().getNumber());
+            map.put("PATCHSET", event.getPatchSet().getNumber());
+            map.put("REFSPEC", StringUtil.makeRefSpec(event));
+        }
         if (r != null) {
             map.put("BUILDURL", hudson.getRootUrl() + r.getUrl());
         }
@@ -283,7 +285,7 @@ public class ParameterExpander {
                 return config.getGerritBuildUnstableVerifiedValue();
             }
         } else {
-            //As bad as failue, for now
+            //As bad as failure, for now
             if (trigger.getGerritBuildFailedVerifiedValue() != null) {
                 return trigger.getGerritBuildFailedVerifiedValue();
             } else {
@@ -365,7 +367,7 @@ public class ParameterExpander {
      * @return the string.
      */
     private String createBuildsStats(MemoryImprint memoryImprint, TaskListener listener,
-                                     Map<String, String> parameters) {
+            Map<String, String> parameters) {
         StringBuilder str = new StringBuilder("");
         final String rootUrl = hudson.getRootUrl();
 

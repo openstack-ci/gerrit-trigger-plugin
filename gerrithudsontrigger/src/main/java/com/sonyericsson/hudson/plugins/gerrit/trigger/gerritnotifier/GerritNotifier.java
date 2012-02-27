@@ -24,7 +24,7 @@
 package com.sonyericsson.hudson.plugins.gerrit.trigger.gerritnotifier;
 
 import com.sonyericsson.hudson.plugins.gerrit.gerritevents.GerritCmdRunner;
-import com.sonyericsson.hudson.plugins.gerrit.gerritevents.dto.events.PatchsetCreated;
+import com.sonyericsson.hudson.plugins.gerrit.gerritevents.dto.events.GerritTriggeredEvent;
 import com.sonyericsson.hudson.plugins.gerrit.trigger.config.IGerritHudsonTriggerConfig;
 import com.sonyericsson.hudson.plugins.gerrit.trigger.gerritnotifier.model.BuildMemory.MemoryImprint;
 import com.sonyericsson.hudson.plugins.gerrit.trigger.gerritnotifier.model.BuildsStartedStats;
@@ -73,16 +73,18 @@ public class GerritNotifier {
      * @param stats the stats.
      */
     public void buildStarted(AbstractBuild build, TaskListener taskListener,
-            PatchsetCreated event, BuildsStartedStats stats) {
-
+            GerritTriggeredEvent event, BuildsStartedStats stats) {
         try {
-            String command = parameterExpander.getBuildStartedCommand(build, taskListener, event, stats);
-            if (command != null) {
-                logger.info("Notifying BuildStarted to gerrit: {}", command);
-                cmdRunner.sendCommand(command);
-            } else {
-                logger.error("Something wrong during parameter extraction. "
-                        + "Gerrit will not be notified of BuildStarted");
+            /* Without a change, it doesn't make sense to notify gerrit */
+            if (event.getChange() != null) {
+                String command = parameterExpander.getBuildStartedCommand(build, taskListener, event, stats);
+                if (command != null) {
+                    logger.info("Notifying BuildStarted to gerrit: {}", command);
+                    cmdRunner.sendCommand(command);
+                } else {
+                    logger.error("Something wrong during parameter extraction. "
+                            + "Gerrit will not be notified of BuildStarted");
+                }
             }
         } catch (Exception ex) {
             logger.error("Could not complete BuildStarted notification!", ex);
@@ -97,14 +99,17 @@ public class GerritNotifier {
     public void buildCompleted(MemoryImprint memoryImprint, TaskListener listener) {
 
         try {
-            String command = parameterExpander.getBuildCompletedCommand(memoryImprint, listener);
+            /* Without a change, it doesn't make sense to notify gerrit */
+            if (memoryImprint.getEvent().getChange() != null) {
+                String command = parameterExpander.getBuildCompletedCommand(memoryImprint, listener);
 
-            if (command != null) {
-                logger.info("Notifying BuildCompleted to gerrit: {}", command);
-                cmdRunner.sendCommand(command);
-            } else {
-                logger.error("Something wrong during parameter extraction. "
-                        + "Gerrit will not be notified of BuildCompleted");
+                if (command != null) {
+                    logger.info("Notifying BuildCompleted to gerrit: {}", command);
+                    cmdRunner.sendCommand(command);
+                } else {
+                    logger.error("Something wrong during parameter extraction. "
+                            + "Gerrit will not be notified of BuildCompleted");
+                }
             }
         } catch (Exception ex) {
             logger.error("Could not complete BuildCompleted notification!", ex);

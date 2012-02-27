@@ -28,32 +28,17 @@ import com.sonyericsson.hudson.plugins.gerrit.gerritevents.dto.GerritJsonEvent;
 import com.sonyericsson.hudson.plugins.gerrit.gerritevents.dto.attr.Account;
 import net.sf.json.JSONObject;
 
-import static com.sonyericsson.hudson.plugins.gerrit.gerritevents.dto.GerritEventKeys.ABANDONER;
+import static com.sonyericsson.hudson.plugins.gerrit.gerritevents.dto.GerritEventKeys.SUBMITTER;
 
 /**
- * A DTO representation of the change-abandoned Gerrit Event.
+ * A DTO representation of the ref-updated Gerrit Event.
  * @author Robert Sandell &lt;robert.sandell@sonyericsson.com&gt;
  */
-public class ChangeAbandoned extends GerritTriggeredEvent implements GerritJsonEvent {
-
-    /**
-     * Default constructor.
-     */
-    public ChangeAbandoned() {
-    }
-
-    /**
-     * Constructor that fills data directly.
-     * @param json the JSON Object
-     * @see #fromJson(String)
-     */
-    public ChangeAbandoned(JSONObject json) {
-        fromJson(json);
-    }
+public class RefUpdated extends GerritTriggeredEvent implements GerritJsonEvent {
 
     @Override
     public GerritEventType getEventType() {
-        return GerritEventType.CHANGE_ABANDONED;
+        return GerritEventType.REF_UPDATED;
     }
 
     @Override
@@ -64,8 +49,8 @@ public class ChangeAbandoned extends GerritTriggeredEvent implements GerritJsonE
     @Override
     public void fromJson(JSONObject json) {
         super.fromJson(json);
-        if (json.containsKey(ABANDONER)) {
-            account = new Account(json.getJSONObject(ABANDONER));
+        if (json.containsKey(SUBMITTER)) {
+            this.account = new Account(json.getJSONObject(SUBMITTER));
         }
     }
 }
